@@ -1,9 +1,9 @@
 # تحميل التطبيق
 
-بعد نجاح GitHub Actions سيكون رابط APK المباشر:
+رابط APK المباشر:
 
-`https://github.com/USERNAME/REPO/raw/main/apk/interactive-dictionary.apk`
+https://github.com/aljwaal1/interactive_dictionary_ar/raw/main/apk/interactive-dictionary.apk
 
-مسار APK داخل المستودع:
+مسار الملف داخل المستودع:
 
-`apk/interactive-dictionary.apk`
+
