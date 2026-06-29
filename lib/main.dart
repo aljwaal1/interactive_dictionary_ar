@@ -5,8 +5,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() => runApp(const App());
 const appTitle = 'القاموس التفاعلي';
-const appVersion = 'V3';
-const seed = Color(0xFF16A34A);
+const appVersion = 'V4';
+const seed = Color(0xFF15803D);
 
 class WordItem {
   final String en;
@@ -59,32 +59,22 @@ class _HomeState extends State<Home> {
   }
 
   WordItem get quizWord => words[quizIndex % words.length];
-  List<String> get options {
-    final set = <String>{quizWord.ar};
-    while (set.length < 4) { set.add(words[rnd.nextInt(words.length)].ar); }
-    final list = set.toList();
-    list.shuffle(rnd);
-    return list;
-  }
-
-  void answer(String choice) {
-    setState(() { if (choice == quizWord.ar) { correct++; } else { wrong++; } quizIndex = (quizIndex + 1) % words.length; });
-    SystemSound.play(SystemSoundType.click);
-  }
+  List<String> get options { final set = <String>{quizWord.ar}; while (set.length < 4) { set.add(words[rnd.nextInt(words.length)].ar); } final list = set.toList(); list.shuffle(rnd); return list; }
+  void answer(String choice) { setState(() { if (choice == quizWord.ar) { correct++; } else { wrong++; } quizIndex = (quizIndex + 1) % words.length; }); SystemSound.play(SystemSoundType.click); }
 
   @override Widget build(BuildContext context) { final pages = [home(), list(), quiz(), about()]; return Scaffold(body: SafeArea(child: AnimatedSwitcher(duration: const Duration(milliseconds: 220), child: pages[tab])), bottomNavigationBar: NavigationBar(selectedIndex: tab, onDestinationSelected: (v) => setState(() => tab = v), destinations: const [NavigationDestination(icon: Icon(Icons.home_rounded), label: 'الرئيسية'), NavigationDestination(icon: Icon(Icons.menu_book_rounded), label: 'الكلمات'), NavigationDestination(icon: Icon(Icons.quiz_rounded), label: 'اختبار'), NavigationDestination(icon: Icon(Icons.info_rounded), label: 'عن')]),); }
 
   Widget home() => ListView(padding: const EdgeInsets.all(16), children: [hero(), const SizedBox(height: 12), Row(children: [Expanded(child: stat('الكلمات', '${words.length}', Icons.translate_rounded)), const SizedBox(width: 10), Expanded(child: stat('المستويات', 'KG-4', Icons.school_rounded))]), const SizedBox(height: 12), header('بطاقة سريعة'), flashCard(words[quizIndex % words.length]), const SizedBox(height: 12), header('أمثلة'), ...words.take(4).map(tile)]);
   Widget list() => ListView(padding: const EdgeInsets.all(16), children: [header('الكلمات'), TextField(controller: search, onChanged: (_) => setState(() {}), decoration: input('بحث إنجليزي أو عربي', Icons.search_rounded)), const SizedBox(height: 10), SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: ['الكل', 'KG', '1', '2', '3', '4'].map((e) => Padding(padding: const EdgeInsetsDirectional.only(end: 8), child: ChoiceChip(label: Text(e), selected: level == e, onSelected: (_) => setState(() => level = e)))).toList())), const SizedBox(height: 12), if (filtered.isEmpty) empty(), ...filtered.map(tile)]);
   Widget quiz() { final opts = options; return ListView(padding: const EdgeInsets.all(16), children: [header('اختبار سريع'), card(Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('ما معنى:', style: TextStyle(color: Colors.grey.shade700)), const SizedBox(height: 8), Text(quizWord.en, style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w900)), const SizedBox(height: 12), ...opts.map((o) => Padding(padding: const EdgeInsets.only(bottom: 8), child: SizedBox(width: double.infinity, child: OutlinedButton(onPressed: () => answer(o), child: Text(o)))))])), const SizedBox(height: 12), Row(children: [Expanded(child: stat('صحيح', '$correct', Icons.check_circle_rounded)), const SizedBox(width: 10), Expanded(child: stat('خطأ', '$wrong', Icons.cancel_rounded))])]); }
-  Widget about() => ListView(padding: const EdgeInsets.all(16), children: [header('عن التطبيق'), card(const Text('$appTitle V3\nقاموس عربي إنجليزي بسيط مع بحث، مستويات، بطاقة تفاعلية، واختبار سريع. يمكن لاحقًا توسيعه إلى 100 كلمة لكل صف وربطه بملف JSON.'))]);
+  Widget about() => ListView(padding: const EdgeInsets.all(16), children: [header('عن التطبيق'), card(const Text('$appTitle V4\nتحسين بصري مريح، بحث، مستويات، بطاقة تفاعلية، واختبار سريع. يمكن لاحقًا توسيعه إلى 100 كلمة لكل صف وربطه بملف JSON.'))]);
 
-  Widget hero() => Container(padding: const EdgeInsets.all(20), decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF16A34A), Color(0xFF86EFAC)]), borderRadius: BorderRadius.circular(28)), child: const Text('$appTitle V3', style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.w900)));
+  Widget hero() => Container(padding: const EdgeInsets.all(22), decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF15803D), Color(0xFF4ADE80)]), borderRadius: BorderRadius.circular(32), boxShadow: [BoxShadow(color: seed.withValues(alpha: .20), blurRadius: 28, offset: const Offset(0, 14))]), child: const Text('$appTitle V4', style: TextStyle(color: Colors.white, fontSize: 27, fontWeight: FontWeight.w900)));
   Widget flashCard(WordItem w) => card(Column(children: [Text(w.en, style: const TextStyle(fontSize: 34, fontWeight: FontWeight.w900)), const SizedBox(height: 10), if (reveal) Text(w.ar, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w800)), const SizedBox(height: 10), FilledButton.icon(onPressed: () => setState(() => reveal = !reveal), icon: Icon(reveal ? Icons.visibility_off_rounded : Icons.visibility_rounded), label: Text(reveal ? 'إخفاء المعنى' : 'إظهار المعنى'))]));
   Widget tile(WordItem w) => Padding(padding: const EdgeInsets.only(bottom: 10), child: card(ListTile(leading: CircleAvatar(backgroundColor: seed.withValues(alpha: .12), child: const Icon(Icons.translate_rounded, color: seed)), title: Text(w.en, style: const TextStyle(fontWeight: FontWeight.w900)), subtitle: Text(w.ar), trailing: Chip(label: Text(w.level)))));
   Widget stat(String t, String v, IconData icon) => card(Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Icon(icon, color: seed), const SizedBox(height: 8), Text(v, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w900)), Text(t)]));
   Widget header(String t) => Padding(padding: const EdgeInsets.only(bottom: 12), child: Text(t, style: const TextStyle(fontSize: 26, fontWeight: FontWeight.w900)));
   Widget empty() => card(Center(child: Text('لا توجد نتائج', style: TextStyle(color: Colors.grey.shade700))));
-  InputDecoration input(String label, IconData icon) => InputDecoration(labelText: label, prefixIcon: Icon(icon), filled: true, fillColor: Colors.white, border: OutlineInputBorder(borderRadius: BorderRadius.circular(18), borderSide: BorderSide.none));
-  Widget card(Widget child) => Container(width: double.infinity, padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(22), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: .05), blurRadius: 18, offset: const Offset(0, 8))]), child: child);
+  InputDecoration input(String label, IconData icon) => InputDecoration(labelText: label, prefixIcon: Icon(icon), filled: true, fillColor: Colors.white, border: OutlineInputBorder(borderRadius: BorderRadius.circular(20), borderSide: BorderSide.none));
+  Widget card(Widget child) => Container(width: double.infinity, padding: const EdgeInsets.all(18), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(24), boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: .045), blurRadius: 22, offset: const Offset(0, 10))]), child: child);
 }
