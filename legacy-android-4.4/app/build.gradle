@@ -1,0 +1,18 @@
+plugins { id 'com.android.application' }
+
+android {
+    namespace 'com.explapp.interactivedictionarylegacy'
+    compileSdk 33
+
+    defaultConfig {
+        applicationId 'com.explapp.interactivedictionarylegacy'
+        minSdk 19
+        targetSdk 28
+        versionCode 1
+        versionName '1.0.0-legacy'
+    }
+
+    buildTypes {
+        release { minifyEnabled false }
+    }
+}
