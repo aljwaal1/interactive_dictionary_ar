@@ -3,6 +3,8 @@ package com.explapp.interactivedictionarylegacy;
 import android.app.Activity;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.speech.tts.TextToSpeech;
+import java.util.Locale;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.Gravity;
@@ -47,10 +49,12 @@ public class MainActivity extends Activity {
     private int flashIndex=0, quizIndex=0, correct=0, wrong=0;
     private boolean revealed=false;
     private final Random random = new Random();
+    private TextToSpeech tts;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
         setTitle("القاموس التفاعلي");
+        tts=new TextToSpeech(this,new TextToSpeech.OnInitListener(){public void onInit(int status){if(status==TextToSpeech.SUCCESS)tts.setLanguage(Locale.US);}});
         showHome();
     }
 
@@ -83,6 +87,7 @@ public class MainActivity extends Activity {
         flashEnglish=text("",34,true); flashEnglish.setGravity(Gravity.CENTER); r.addView(flashEnglish);
         flashArabic=text("",28,true); flashArabic.setGravity(Gravity.CENTER); r.addView(flashArabic);
         Button reveal=button("إظهار / إخفاء المعنى"); reveal.setOnClickListener(new View.OnClickListener(){public void onClick(View v){ revealed=!revealed; updateFlash(); }}); r.addView(reveal);
+        Button voice=button("استمع للنطق"); voice.setOnClickListener(new View.OnClickListener(){public void onClick(View v){speak(words[flashIndex].en);}}); r.addView(voice);
         Button next=button("الكلمة التالية"); next.setOnClickListener(new View.OnClickListener(){public void onClick(View v){ flashIndex=(flashIndex+1)%words.length; revealed=false; updateFlash(); }}); r.addView(next);
         updateFlash(); nav(r); setContentView(s);
     }
@@ -123,6 +128,9 @@ public class MainActivity extends Activity {
     private void showAbout() {
         ScrollView s=new ScrollView(this); LinearLayout r=root(); s.addView(r); r.addView(text("عن التطبيق",27,true)); r.addView(text("نسخة مستقلة خفيفة للأجهزة القديمة. تحتوي على بحث، تصفية حسب الصف، بطاقات تعليمية واختبار سريع، وتعمل دون اتصال بالإنترنت.",19,false)); nav(r); setContentView(s);
     }
+
+    private void speak(String word){if(tts!=null)tts.speak(word,TextToSpeech.QUEUE_FLUSH,null);}
+    @Override protected void onDestroy(){if(tts!=null){tts.stop();tts.shutdown();}super.onDestroy();}
 
     private int dp(int value){return (int)(value*getResources().getDisplayMetrics().density+0.5f);}
 }
