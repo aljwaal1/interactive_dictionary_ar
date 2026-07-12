@@ -1,6 +1,7 @@
 package com.explapp.interactivedictionarylegacy;
 
 import android.app.Activity;
+import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.speech.tts.TextToSpeech;
@@ -49,11 +50,13 @@ public class MainActivity extends Activity {
     private int flashIndex=0, quizIndex=0, correct=0, wrong=0;
     private boolean revealed=false;
     private final Random random = new Random();
+    private SharedPreferences prefs;
     private TextToSpeech tts;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
         setTitle("القاموس التفاعلي");
+        prefs=getSharedPreferences("dictionary_score",MODE_PRIVATE); correct=prefs.getInt("correct",0); wrong=prefs.getInt("wrong",0);
         tts=new TextToSpeech(this,new TextToSpeech.OnInitListener(){public void onInit(int status){if(status==TextToSpeech.SUCCESS)tts.setLanguage(Locale.US);}});
         showHome();
     }
@@ -121,7 +124,7 @@ public class MainActivity extends Activity {
     private void buildQuiz() {
         WordItem target=words[quizIndex%words.length]; quizWord.setText("ما معنى: "+target.en); quizOptions.removeAllViews();
         List<String> opts=new ArrayList<String>(); opts.add(target.ar); while(opts.size()<4){String a=words[random.nextInt(words.length)].ar;if(!opts.contains(a))opts.add(a);} Collections.shuffle(opts);
-        for(final String o:opts){Button b=button(o); b.setOnClickListener(new View.OnClickListener(){public void onClick(View v){WordItem current=words[quizIndex%words.length]; if(o.equals(current.ar)){correct++;Toast.makeText(MainActivity.this,"إجابة صحيحة",Toast.LENGTH_SHORT).show();}else{wrong++;Toast.makeText(MainActivity.this,"الإجابة: "+current.ar,Toast.LENGTH_SHORT).show();} quizIndex=(quizIndex+1)%words.length; buildQuiz();}}); quizOptions.addView(b);}
+        for(final String o:opts){Button b=button(o); b.setOnClickListener(new View.OnClickListener(){public void onClick(View v){WordItem current=words[quizIndex%words.length]; if(o.equals(current.ar)){correct++; prefs.edit().putInt("correct",correct).putInt("wrong",wrong).apply();Toast.makeText(MainActivity.this,"إجابة صحيحة",Toast.LENGTH_SHORT).show();}else{wrong++; prefs.edit().putInt("correct",correct).putInt("wrong",wrong).apply();Toast.makeText(MainActivity.this,"الإجابة: "+current.ar,Toast.LENGTH_SHORT).show();} quizIndex=(quizIndex+1)%words.length; buildQuiz();}}); quizOptions.addView(b);}
         score.setText("صحيح: "+correct+"   |   خطأ: "+wrong);
     }
 
