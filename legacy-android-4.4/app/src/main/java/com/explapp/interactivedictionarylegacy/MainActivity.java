@@ -101,6 +101,7 @@ public class MainActivity extends Activity {
     private int roundCorrect;
     private int roundWrong;
     private boolean answerLocked;
+    private boolean reviewRound;
 
     @Override public void onCreate(Bundle state) {
         super.onCreate(state);
@@ -283,7 +284,7 @@ public class MainActivity extends Activity {
             final String level = levels[i];
             LinearLayout option = card();
             TextView title = label(levelName(level), 19, GREEN_DARK, Typeface.BOLD);
-            TextView detail = label("6 كلمات  •  أتقنت " + masteredInLevel(level), 14, MUTED, Typeface.NORMAL);
+            TextView detail = label(levelWordCount(level) + " كلمات  •  أتقنت " + masteredInLevel(level), 14, MUTED, Typeface.NORMAL);
             option.addView(title);
             option.addView(detail, params(-1, -2, 0, 0, 3, 0, 8));
             Button play = primary("ابدأ اللعب");
@@ -297,6 +298,7 @@ public class MainActivity extends Activity {
     }
 
     private void startRound(String level) {
+        reviewRound = false;
         selectedLevel = level;
         round = filter(level, "");
         Collections.shuffle(round);
@@ -344,11 +346,13 @@ public class MainActivity extends Activity {
                     if (ok) {
                         roundCorrect++;
                         setMastered(target, true);
+                        setNeedsReview(target, false);
                         answer.setBackground(round(MINT, 14, GREEN, 2));
                         answer.setTextColor(GREEN_DARK);
                         speak(target.en);
                     } else {
                         roundWrong++;
+                        setNeedsReview(target, true);
                         answer.setBackground(round(Color.rgb(253, 235, 232), 14, CORAL, 2));
                         answer.setTextColor(CORAL);
                     }
@@ -384,8 +388,12 @@ public class MainActivity extends Activity {
         TextView score = label(percent + "%\n" + roundCorrect + " صحيحة  •  " + roundWrong + " للمراجعة", 17, MUTED, Typeface.BOLD);
         score.setGravity(Gravity.CENTER);
         result.addView(score, params(-1, -2, 0, 0, 8, 0, 15));
-        Button replay = primary("العب جولة أخرى");
-        replay.setOnClickListener(new View.OnClickListener() { public void onClick(View view) { startRound(selectedLevel); } });
+        Button replay = primary(reviewRound ? "راجع الكلمات مرة أخرى" : "العب جولة أخرى");
+        replay.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View view) {
+                if (reviewRound) startReviewRound(); else startRound(selectedLevel);
+            }
+        });
         result.addView(replay, params(-1, dp(52), 0, 0, 0, 0, 8));
         Button levels = outline("تغيير المستوى");
         levels.setOnClickListener(new View.OnClickListener() { public void onClick(View view) { showGameSetup(); } });
@@ -413,7 +421,7 @@ public class MainActivity extends Activity {
 
         LinearLayout stats = new LinearLayout(this);
         stats.addView(stat("إجابات صحيحة", String.valueOf(prefs.getInt("correct", 0)), GREEN), weight(1, 0, 4));
-        stats.addView(stat("تحتاج مراجعة", String.valueOf(prefs.getInt("wrong", 0)), CORAL), weight(1, 4, 0));
+        stats.addView(stat("تحتاج مراجعة", String.valueOf(needsReviewCount()), CORAL), weight(1, 4, 0));
         content.addView(stats, params(-1, dp(76), 0, 0, 0, 0, 12));
 
         TextView title = label("المستويات", 19, INK, Typeface.BOLD);
@@ -421,21 +429,47 @@ public class MainActivity extends Activity {
         for (int i = 1; i < levels.length; i++) {
             String level = levels[i];
             int done = masteredInLevel(level);
+            int total = levelWordCount(level);
             LinearLayout row = card();
             LinearLayout line = new LinearLayout(this);
             TextView name = label(levelName(level), 16, GREEN_DARK, Typeface.BOLD);
-            TextView count = label(done + " / 6", 14, MUTED, Typeface.BOLD);
+            TextView count = label(done + " / " + total, 14, MUTED, Typeface.BOLD);
             count.setGravity(Gravity.LEFT);
             line.addView(name, new LinearLayout.LayoutParams(0, -2, 1));
             line.addView(count, new LinearLayout.LayoutParams(0, -2, 1));
             row.addView(line);
-            row.addView(progressBar(done / 6f), params(-1, dp(8), 0, 0, 8, 0, 0));
+            row.addView(progressBar(total == 0 ? 0f : done / (float) total), params(-1, dp(8), 0, 0, 8, 0, 0));
             content.addView(elevated(row), params(-1, -2, 0, 0, 0, 0, 7));
+        }
+        if (needsReviewCount() > 0) {
+            Button review = primary("راجع " + needsReviewCount() + " كلمات تحتاج تثبيتاً");
+            review.setOnClickListener(new View.OnClickListener() {
+                public void onClick(View view) { startReviewRound(); }
+            });
+            content.addView(review, params(-1, dp(52), 0, 0, 7, 0, 7));
         }
         Button reset = outline("إعادة ضبط الإنجاز");
         reset.setTextColor(CORAL);
         reset.setOnClickListener(new View.OnClickListener() { public void onClick(View view) { confirmReset(); } });
         content.addView(reset, params(-1, dp(50), 0, 0, 7, 0, 0));
+    }
+
+    private void startReviewRound() {
+        round = new ArrayList<WordItem>();
+        for (WordItem word : words) if (needsReview(word)) round.add(word);
+        if (round.isEmpty()) {
+            Toast.makeText(this, "لا توجد كلمات تحتاج مراجعة الآن", Toast.LENGTH_SHORT).show();
+            showProgress();
+            return;
+        }
+        Collections.shuffle(round);
+        if (round.size() > 8) round = new ArrayList<WordItem>(round.subList(0, 8));
+        reviewRound = true;
+        selectedLevel = "مراجعة";
+        roundIndex = 0;
+        roundCorrect = 0;
+        roundWrong = 0;
+        showQuestion();
     }
 
     private void confirmReset() {
@@ -643,7 +677,14 @@ public class MainActivity extends Activity {
         return normalized.replaceAll("[\\u064B-\\u065F\\u0670\\u06D6-\\u06ED]", "").replace("ـ", "").replace("أ", "ا").replace("إ", "ا").replace("آ", "ا");
     }
     private boolean isMastered(WordItem word) { return prefs.getBoolean("mastered_" + word.en, false); }
-    private void setMastered(WordItem word, boolean mastered) { prefs.edit().putBoolean("mastered_" + word.en, mastered).apply(); }
+    private void setMastered(WordItem word, boolean mastered) {
+        prefs.edit().putBoolean("mastered_" + word.en, mastered).apply();
+        if (mastered) setNeedsReview(word, false);
+    }
+    private boolean needsReview(WordItem word) { return prefs.getBoolean("review_" + word.en, false); }
+    private void setNeedsReview(WordItem word, boolean review) { prefs.edit().putBoolean("review_" + word.en, review).apply(); }
+    private int needsReviewCount() { int total = 0; for (WordItem word : words) if (needsReview(word)) total++; return total; }
+    private int levelWordCount(String level) { int total = 0; for (WordItem word : words) if (level.equals(word.level)) total++; return total; }
     private int masteredCount() { int total = 0; for (WordItem word : words) if (isMastered(word)) total++; return total; }
     private int masteredInLevel(String level) { int total = 0; for (WordItem word : words) if (level.equals(word.level) && isMastered(word)) total++; return total; }
     private String masteryMessage(int mastered) {
