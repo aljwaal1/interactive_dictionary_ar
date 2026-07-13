@@ -8,8 +8,8 @@ android {
         applicationId 'com.explapp.interactivedictionarylegacy'
         minSdk 19
         targetSdk 28
-        versionCode 4
-        versionName '3.1.0-legacy'
+        versionCode 5
+        versionName '3.2.0-legacy'
     }
 
     buildTypes {
