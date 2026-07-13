@@ -6,10 +6,13 @@ import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.ColorFilter;
 import android.graphics.Paint;
 import android.graphics.Path;
+import android.graphics.PixelFormat;
 import android.graphics.RectF;
 import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Build;
 import android.os.Bundle;
@@ -488,8 +491,10 @@ public class MainActivity extends Activity {
         button.setAllCaps(false);
         button.setTextColor(section == target ? GREEN : MUTED);
         button.setTypeface(Typeface.DEFAULT, section == target ? Typeface.BOLD : Typeface.NORMAL);
-        button.setCompoundDrawablesWithIntrinsicBounds(0, icon, 0, 0);
-        button.setCompoundDrawablePadding(dp(1));
+        NavGlyph glyph = new NavGlyph(target, section == target ? GREEN : MUTED);
+        glyph.setBounds(0, 0, dp(23), dp(23));
+        button.setCompoundDrawables(null, glyph, null, null);
+        button.setCompoundDrawablePadding(dp(2));
         button.setGravity(Gravity.CENTER);
         button.setBackgroundColor(Color.TRANSPARENT);
         button.setOnClickListener(new View.OnClickListener() {
@@ -615,6 +620,18 @@ public class MainActivity extends Activity {
         return drawable;
     }
     private int dp(int value) { return (int) (value * getResources().getDisplayMetrics().density + .5f); }
+    private static final class NavGlyph extends Drawable {
+        private final Paint p = new Paint(Paint.ANTI_ALIAS_FLAG); private final RectF r = new RectF(); private final int kind;
+        NavGlyph(int kind, int color) { this.kind = kind; p.setColor(color); p.setStrokeCap(Paint.Cap.ROUND); p.setStrokeJoin(Paint.Join.ROUND); }
+        @Override public void draw(Canvas c) {
+            float w=getBounds().width(), h=getBounds().height(); c.save(); c.translate(getBounds().left,getBounds().top); p.setStrokeWidth(Math.max(2f,w*.09f)); p.setStyle(Paint.Style.STROKE);
+            if(kind==0){r.set(w*.14f,h*.19f,w*.86f,h*.81f);c.drawRoundRect(r,w*.1f,w*.1f,p);c.drawCircle(w*.5f,h*.5f,w*.16f,p);}
+            else if(kind==1){c.drawCircle(w*.42f,h*.42f,w*.25f,p);c.drawLine(w*.61f,h*.61f,w*.84f,h*.84f,p);}
+            else if(kind==2){r.set(w*.14f,h*.14f,w*.86f,h*.86f);c.drawRoundRect(r,w*.16f,w*.16f,p);c.drawLine(w*.30f,h*.52f,w*.44f,h*.66f,p);c.drawLine(w*.44f,h*.66f,w*.72f,h*.34f,p);}
+            else{p.setStyle(Paint.Style.FILL);r.set(w*.15f,h*.58f,w*.31f,h*.86f);c.drawRoundRect(r,w*.04f,w*.04f,p);r.set(w*.42f,h*.38f,w*.58f,h*.86f);c.drawRoundRect(r,w*.04f,w*.04f,p);r.set(w*.69f,h*.16f,w*.85f,h*.86f);c.drawRoundRect(r,w*.04f,w*.04f,p);}c.restore();
+        }
+        @Override public void setAlpha(int a){p.setAlpha(a);}@Override public void setColorFilter(ColorFilter f){p.setColorFilter(f);}@Override public int getOpacity(){return PixelFormat.TRANSLUCENT;}
+    }
     private boolean compactHeight() { return getResources().getDisplayMetrics().heightPixels / getResources().getDisplayMetrics().density < 560; }
     private int indexOf(WordItem item) { for (int i = 0; i < words.length; i++) if (words[i] == item) return i; return 0; }
     private String levelName(String level) {
