@@ -277,7 +277,7 @@ public class MainActivity extends Activity {
     }
 
     private void showGameSetup() {
-        page("لعبة المعاني", "اختر المستوى وابدأ جولة من 8 كلمات", 2);
+        page("لعبة المعاني", "اختر المستوى وابدأ جولة حتى 8 كلمات", 2);
         TextView intro = label("أي مجموعة تريد أن تتدرّب عليها؟", 20, INK, Typeface.BOLD);
         content.addView(intro, params(-1, -2, 0, 0, 5, 0, 12));
         for (int i = 1; i < levels.length; i++) {
